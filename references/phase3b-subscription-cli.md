@@ -235,3 +235,31 @@ else:
 - 不要為了串流拆 `--output-format stream-json`(claude)/逐事件轉發(codex)當 MVP——
   先用「整段回覆 + on_tick 心跳」跑通,串流是之後的 UX 加值。
 - 不要讓 CLI 的 cwd = 專案目錄(它會把測試檔寫進你的 repo)。
+
+---
+
+## 12. 全 15 phase 相容性對照(跑完整流程時看這張)
+
+| Phase | 訂閱 CLI 路線 | 差異說明 |
+|---|:---:|---|
+| 1 分析專案 | ✅ 照舊 | 無關大腦 |
+| 2 挑工具候選 | ✅ 照舊 | kwargs-rule 照守;MCP 註冊時 `_mcp_safe()` 會剝掉 `**kwargs`(否則漏進 schema 變假參數) |
+| 3 LLM setup | 🔀 分支點 | 選訂閱 → 本文件;兩路可並存 settings 切換 |
+| 4 Agent core | ⚠️ 半適用 | **ToolRegistry 照用**(MCP server 靠它);orchestrator / llm_client / Sequence Sanitizer / per-chat history / token budget **全部不適用**(CLI 自帶迴圈與 context)。Host-terminal logging 規則仍適用(在工具裡) |
+| 5 Two-step write | ✅ 照舊 | 活在工具函式內,誰呼叫都一樣擋 |
+| 6 幻覺偵測 | ❌ 不適用 | 需要逐輪 tool_calls 可見度 → 改用「交付契約 + 系統偵測網」(§7) |
+| 7 權限 ACL | ⚠️ 適用但有洞 | 你的工具照擋。**但 codex bypass 模式有自己的原生 shell/檔案能力,不受 permissions.json 約束**;claude 安全模式(只 allowlist mcp__*)才是「工具=唯一路徑」。要嚴格 ACL → 用 claude 安全模式;codex 路線的風險評估等同 skill 的「Host 模式 shell」 |
+| 7.5 Channel gate | ✅ 照舊 | 無關大腦 |
+| 8 / 8b Adapter | ⚠️ 三處改 | (1) **檔案自動偵測失效**:adapter 看不到 tool result 的 `output_file` key → 改掃「最終回覆文字」中的路徑 + 偵測網補漏;(2) tool progress callback → 換成 `on_tick` 心跳(可選:解析 `--json`/stream-json 事件);(3) `/stop` → 樹殺 + **該 chat session 歸零** |
+| 9 Channel prompt | ⚠️ 改注入點 | claude:照舊(system 每輪送)。codex:動態內容(日期等)放「首輪完整區」或精簡提醒區,**別再膨脹守則牆**;「工具清單注入」直接刪——MCP 啟動時 CLI 自己會發現工具 |
+| 10 Shell + 沙盒 | ⚠️ 重新想 | CLI 原生就有 shell(claude 全能模式 Bash / codex bypass)。要**強制沙盒**只有一條路:自己的 MCP shell 工具(Docker 容器)+ claude 安全模式(不開原生 Bash)。codex 路線做不到嚴格沙盒(原生 shell 關不掉) |
+| 10b 基礎工具 | ⚠️ 看模式 | claude 全能模式/codex:原生已有 read/write/glob/grep → MCP 重複版多餘;claude 安全模式:你的 MCP 檔案工具=唯一檔案通道(配 ACL)→ 有價值。`ask_user`/`done` 不適用(CLI 迴圈自己收尾) |
+| 11 Tavily | ✅ 大致照舊 | claude 全能模式已有原生 WebSearch(可省);安全模式/codex → MCP web_search 照做 |
+| 11b 排程 | ✅ 照舊 | 排程器活在 adapter/host 側;fire 時改呼 `cli_brain.chat()`。注意:每次 fire = 消耗訂閱額度一輪 |
+| 12 Self-evolution | ✅ 反而更簡單 | **hot-reload 全套不需要**:CLI 每輪 spawn 全新 MCP server 行程 → 新工具下一輪自動生效(importlib.invalidate_caches / reload_all / schemas 重抓三條 hard rule 全部免除)。approve 流程(TG button)照舊;Defense 4/5(dict wrap、register 補全)照舊 |
+| 13 Context scaling | ⚠️ 表要加一行 | 訂閱 CLI:**trim only**——工具描述精簡有效;caching 不可控(claude 內建自動);真正的天花板是**訂閱額度/rate limit**(額度用罄會直接 turn.failed,見 §_codex_parse 錯誤浮現) |
+| 14 Memory | ⚠️ 一個大坑 | 記憶工具(remember/recall…)= 普通 MCP 工具,照用。**但 ContextVar per-user 隔離跨不過行程**:工具跑在 CLI spawn 的 MCP server 行程裡,adapter 行程 set 的 ContextVar 拿不到!解法:adapter spawn CLI 前設環境變數(如 `AGENT_CHAT_ID`),CLI → MCP server 子行程會繼承 env,工具改讀 env。單使用者場景可直接忽略。working memory 由 CLI session 取代;episode 自動摘要若也走訂閱 CLI 要注意額度 |
+
+**一句話心法**:凡是「活在工具函式裡」的機制(two-step、ACL、error 格式)全部照舊;
+凡是「活在 orchestrator 迴圈裡」的機制(幻覺偵測、sanitizer、history 管理、hot-reload、
+ContextVar)都要重新想——因為迴圈搬到 CLI 家了、工具搬到另一個行程了。
