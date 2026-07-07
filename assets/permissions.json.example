@@ -1,0 +1,11 @@
+{
+  "_comment": "agent file ACL. Paths must be absolute. Do NOT commit this file (gitignore it).",
+  "read": [
+    "C:/Users/me/projects/myapp",
+    "C:/Users/me/Downloads"
+  ],
+  "write": [
+    "C:/Users/me/projects/myapp/output"
+  ],
+  "delete": []
+}

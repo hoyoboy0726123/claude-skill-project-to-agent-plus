@@ -1,0 +1,28 @@
+__pycache__/
+*.py[cod]
+*$py.class
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Secrets — never commit (only *.example versions are tracked)
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.p12
+*.pfx
+id_rsa*
+id_ed25519*
+credentials.json
+*credentials*
+*secret*
+*token*
+
+# Local runtime artifacts
+*.db
+*.sqlite
+*.sqlite3
+.needs_wsl_shutdown

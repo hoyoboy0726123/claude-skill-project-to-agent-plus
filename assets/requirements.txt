@@ -1,0 +1,37 @@
+# ─── Core ─────────────────────────────────────────────────
+python-dotenv>=1.0.0
+
+# ─── LLM providers (uncomment whichever you actually use) ──
+# llm_client.py imports lazily — 你可以只裝你要用的 provider 的 SDK,
+# 其他 provider 的 class 在你呼叫前不會 import,不會炸。
+
+# Gemini / Gemma — default (free tier)
+google-genai>=2.0.0
+
+# Groq / OpenAI / Ollama 共用 openai SDK(都是 OpenAI-compatible API)
+# openai>=1.50
+
+# Anthropic Claude
+# anthropic>=0.40
+
+# Groq 也有自家 SDK,但 llm_client.py 透過 openai SDK + base_url 就可以,不必額外裝
+# groq>=0.11
+
+# ─── Telegram bot (Phase 8) ────────────────────────────────
+python-telegram-bot>=21.0
+
+# ─── Web search (Phase 11 — optional) ──────────────────────
+# llm_client / web_search.py 用 requests 直打 https://api.tavily.com/{extract,search}
+# 不必裝 tavily-python(避免多餘依賴)
+# tavily-python>=0.3.0           # 若你想用官方 SDK 而非 requests 直打
+
+# ─── Scheduled reminders / proactive push (Phase 11b — optional) ──
+# AsyncIOScheduler + sqlite 持久化;只有 push-capable channel(TG)能真推
+# apscheduler>=3.10
+
+# ─── Common project deps (uncomment if your tools use them) ──
+# pandas
+# openpyxl
+# python-docx
+# requests
+# pillow

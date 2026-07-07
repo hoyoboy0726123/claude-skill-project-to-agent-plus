@@ -1,0 +1,26 @@
+{
+  "skill_name": "project-to-agent",
+  "evals": [
+    {
+      "id": 1,
+      "name": "python-cli-tool",
+      "prompt": "我有一個 Python CLI 工具在 ~/projects/invoice-tool — 主要兩個指令:`invoice-tool list-orders --date YYYY-MM-DD` 跟 `invoice-tool generate-pdf --order-id N --out PATH`。我想在外面用 Telegram 跟它對話,例如『今天有哪些訂單?』『幫我幫訂單 42 出 PDF 給我』。怎麼包成 agent?",
+      "expected_output": "Walks through phases 1-6 with specific tool wrappers for list-orders / generate-pdf, sets up Gemma + Telegram, asks about folder permissions for the PDF output dir. Doesn't push shell/Tavily until user mentions self-evolution or web research needs.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "vague-folder-of-scripts",
+      "prompt": "我電腦上有個資料夾 ~/work/excel-batch 裡面亂七八糟堆了一堆 Python script 跟 .xlsx 檔。每個 script 做不一樣的事(有的清資料、有的合併、有的轉 PDF)。我想用一個 Telegram bot 統一操作這些東西。能做嗎?",
+      "expected_output": "Asks clarifying questions in phase 1 (which scripts user actually uses, which are abandoned, what the recurring tasks look like). Doesn't try to wrap every .py file. Suggests user pick 5-10 most-used to wrap. Walks through phases.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "name": "self-evolving-coder",
+      "prompt": "我想做一個會自己進化的 agent,每次我請它做一個它做不到的事,它就自己寫一個新工具,測試,然後加進來。從哪開始?",
+      "expected_output": "Recognizes this is the self-evolution use case. Stresses that phases 1-6 must come first (an agent with 0 tools can't self-evolve usefully). Clearly explains permissions + shell + approval gates as essential prerequisites. Then walks through phases 7 (shell) → 9 (evolve loop). Mentions Tavily as optional augment for research.",
+      "files": []
+    }
+  ]
+}
