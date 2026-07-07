@@ -7,6 +7,43 @@
 > **不需要任何 API Key**。工具透過 MCP server 曝露給 CLI。
 > 本文件所有結論皆經實戰驗證(SRT AV Studio 專案),每條「坑」都真踩過。
 
+## 0. ⛔ 進場門 — 知情同意(選了訂閱選項後、動工前必跑)
+
+使用者在 Phase 3 選了訂閱選項 ≠ 同意所有取捨。**先把差異亮出來、AskUserQuestion
+確認,才准進本 phase**;不確認 → 回 Phase 3 原 API-key 流程,零損失。
+
+先用一段話展示(照抄可用):
+
+> 走訂閱大腦(免 API Key)前,這些取捨要先知道:
+> - 🧠 推理迴圈在 CLI 家:幻覺偵測(Phase 6)失效 → 改用「交付契約+偵測網」雙保險
+> - 📁 檔案自動傳送改「掃回覆文字」:AI 漏報路徑時由偵測網補(偶爾晚一步)
+> - 🔒 安全邊界:claude 安全模式最嚴(工具=唯一通道);**codex 有原生 shell,
+>   你的資料夾 ACL 管不到它**,風險 ≈ Host 模式 shell
+> - 🧪 嚴格沙盒(Docker 鎖寫入)只有 claude 安全模式做得到,codex 做不到
+> - 📊 額度:用你的訂閱額度,用罄會直接失敗(會顯示明確錯誤與重置時間)
+> - 👥 多人 TG 場景:per-user 記憶隔離要走 env 繼承鏈(單人用不影響)
+> - ✅ 好消息:two-step 確認、資料夾權限、排程照舊;self-evolution 反而更簡單
+
+然後:
+
+```python
+AskUserQuestion(questions=[{
+    "question": "了解以上取捨後,要走訂閱 CLI 路線嗎?",
+    "header": "訂閱路線",
+    "multiSelect": False,
+    "options": [
+        {"label": "走 claude(安全模式)", "description": "最嚴安全邊界:工具是唯一通道、ACL 全效。推薦"},
+        {"label": "走 codex", "description": "接受其原生 shell 不受 ACL 約束(≈Host 模式風險)"},
+        {"label": "兩個都接", "description": "settings 切換;安全性以 codex 的下限計"},
+        {"label": "算了,回 API-key 路線", "description": "回 Phase 3 原流程,零損失"},
+    ],
+}])
+```
+
+選「回 API-key」→ Phase 3b 標 deleted、照原 skill 走,不留任何殘骸。
+
+---
+
 ## 與 API-key 路線的架構差異(先懂這個再動手)
 
 ```
