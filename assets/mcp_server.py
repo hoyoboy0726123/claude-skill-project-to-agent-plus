@@ -19,6 +19,26 @@ MCP_NAME = "myagent"                             # ← 跟 cli_brain.MCP_NAME �
 mcp = FastMCP(MCP_NAME)
 
 
+def _mcp_safe(fn):
+    """剝掉 **kwargs / *args 再交給 FastMCP。
+
+    skill 的 kwargs-rule 要求每個工具接 **kwargs(框架安全網),但 FastMCP 從
+    inspect.signature 推 schema 會把 `kwargs` 當成一個真參數曝露給 LLM → 雜訊
+    + 可能被亂塞。這裡覆寫 __signature__ 只留具名參數。"""
+    import functools
+    import inspect
+    sig = inspect.signature(fn)
+    params = [p for p in sig.parameters.values()
+              if p.kind not in (inspect.Parameter.VAR_KEYWORD,
+                                inspect.Parameter.VAR_POSITIONAL)]
+
+    @functools.wraps(fn)
+    def wrapper(*a, **kw):
+        return fn(*a, **kw)
+    wrapper.__signature__ = sig.replace(parameters=params)
+    return wrapper
+
+
 def _register_all():
     """把 agent 既有的工具全部掛上 MCP(跟 API-key 路線共用同一套實作)。"""
     from agent.tool_registry import ToolRegistry
@@ -28,7 +48,7 @@ def _register_all():
     tools_pkg.register_all(reg)
     for t in reg.all():
         # t.func 的 signature/docstring 就是 CLI 看到的工具說明 —— 寫清楚
-        mcp.tool()(t.func)
+        mcp.tool()(_mcp_safe(t.func))
 
 
 if __name__ == "__main__":

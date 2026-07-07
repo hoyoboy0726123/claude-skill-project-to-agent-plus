@@ -197,8 +197,9 @@ def ensure_codex_config():
 
 
 def _codex_parse(stdout_text):
-    """--json JSONL → (最終文字, thread_id);無 JSON 行 → 純文字 fallback。"""
-    finals, tid, any_json = [], None, False
+    """--json JSONL → (最終文字, thread_id);無 JSON 行 → 純文字 fallback。
+    error / turn.failed 事件(如訂閱額度用罄)轉成可讀訊息,不再默默無輸出。"""
+    finals, errors, tid, any_json = [], [], None, False
     for line in (stdout_text or "").splitlines():
         try:
             o = json.loads(line.strip())
@@ -212,9 +213,18 @@ def _codex_parse(stdout_text):
                 and (item.get("item_type") or item.get("type")) == "agent_message"):
             if item.get("text"):
                 finals.append(item["text"])
+        if o.get("type") == "error" and o.get("message"):
+            errors.append(o["message"])
+        if o.get("type") == "turn.failed":
+            m = (o.get("error") or {}).get("message")
+            if m and m not in errors:
+                errors.append(m)
     if not any_json:
         return (stdout_text or "").strip(), None
-    return "\n\n".join(finals).strip(), tid
+    text = "\n\n".join(finals).strip()
+    if not text and errors:
+        text = "⚠ codex 錯誤:" + " / ".join(errors[:2])
+    return text, tid
 
 
 def run_codex(user_text, session=None, stop_event=None, on_tick=None):
