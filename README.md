@@ -1,12 +1,36 @@
 # project-to-agent-plus
 
-> **Plus 版新增**:Phase 3 可改選 **Claude Code CLI(Pro/Max 訂閱)** 或 **OpenAI codex CLI(ChatGPT 訂閱)** 當大腦 —— **免 API Key**,工具經 MCP server 曝露給官方 CLI(session 精準續聊、陪跑等待+樹殺、codex 提示結構、交付契約雙保險,全套實戰方法見 `references/phase3b-subscription-cli.md`)。沒選訂閱選項時,行為與原版 100% 相同。
-> 原版:https://github.com/hoyoboy0726123/claude-skill-project-to-agent
-
-
-> 一個 Claude Code skill — 把任何現有的軟體專案,引導你走完 12 個階段,變成一個**只透過 Telegram 操作**的對話式 agent(多 LLM provider + 資料夾權限 + two-step write 協議 + hallucination 偵測 + 可選 shell 沙盒 + Tavily 搜尋 + self-evolution)。
+> 一個 Claude Code skill — 把任何現有的軟體專案,引導你走完 15 個階段,變成一個**透過 Telegram / 本機 Web 操作**的對話式 agent(多 LLM provider + 資料夾權限 + two-step write 協議 + hallucination 偵測 + 可選 shell 沙盒 + Tavily 搜尋 + self-evolution + 記憶系統)。
+>
+> **Plus 版新增(相對[原版](https://github.com/hoyoboy0726123/claude-skill-project-to-agent)):Phase 3 多兩個「訂閱制大腦」選項 —— 免 API Key。**
 
 [English version](README.en.md)
+
+## ✨ Plus 版新增了什麼
+
+Phase 3 選 LLM 時,除了原有 5 家 API provider,多出兩個**零 API Key** 選項:
+
+| 選項 | 需要 | 特點 |
+|---|---|---|
+| **Claude Code CLI(訂閱)** | 已裝 `claude` 並登入 Pro/Max | 安全邊界最嚴(工具是唯一通道、資料夾 ACL 全效),推薦預設 |
+| **OpenAI codex CLI(訂閱)** | `npm i -g @openai/codex` + `codex login` | 附原生 shell 與 image_gen 生圖(走 ChatGPT 訂閱額度) |
+
+原理:你的專案工具經 **MCP server** 曝露給官方 CLI,推理迴圈由 CLI 自己跑,吃你已付的訂閱額度。核心件全部給現成範本:
+
+- `references/phase3b-subscription-cli.md` — 完整接法 + 兩家 CLI 全部參數地雷(實戰驗證)+ 全 15 phase 相容性對照表
+- `assets/cli_brain.py` — drop-in 驅動器:per-chat session 精準續聊(`--session-id/--resume`、codex `thread_id`)、陪跑等待+跨平台樹殺、額度用罄等錯誤浮現
+- `assets/mcp_server.py` — 工具曝露範本(自動剝 `**kwargs`,schema 乾淨)
+- `docs/訂閱路線差異說明.md` — 七條取捨 + 決策建議(選擇前必讀)
+
+**知情同意門**:選了訂閱選項,skill 會先亮出全部取捨(幻覺偵測替代、codex 原生 shell 不受 ACL 約束、沙盒限制、額度上限…)再讓你確認;**不選訂閱 → 行為與原版 100% 相同**。
+
+## 📦 安裝這個 skill
+
+```bat
+git clone https://github.com/hoyoboy0726123/claude-skill-project-to-agent-plus "%USERPROFILE%\.claude\skills\claude-skill-project-to-agent-plus"
+```
+
+之後在 Claude Code 裡對任何專案說「把這個變成 agent」即觸發(skill 名:`project-to-agent-plus`,可與原版並存)。
 
 ## 它做什麼
 
@@ -16,9 +40,9 @@
 - 「我想讓這個 CLI 工具可以遠端用」
 - 「做一個會自己寫新工具的 AI 助理」
 
-Skill 帶 Claude(跟你)走完 12 個階段、最後得到一個架在你**現有專案**之上、用 Telegram 操作的 agent。
+Skill 帶 Claude(跟你)逐階段走完、最後得到一個架在你**現有專案**之上、用 Telegram(或本機 Web)操作的 agent。
 
-## 12 個階段
+## 階段總覽(Full 模式共 15 階段,下表為主線;8b/11b/13/14 詳見 SKILL.md)
 
 | # | 階段 | 做什麼 |
 |---|---|---|
